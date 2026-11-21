@@ -1,0 +1,41 @@
+# 依赖与构建产物
+node_modules/
+app/node_modules/
+app/www-offline/
+dist/
+
+# Capacitor / Android 生成物
+app/android/.gradle/
+app/android/build/
+app/android/app/build/
+app/android/capacitor-cordova-android-plugins/
+app/android/app/src/main/assets/public/
+app/android/local.properties
+app/android/app/release/
+*.apk
+*.aab
+
+# 签名与密钥：绝不入库
+*.jks
+*.keystore
+keystore.properties
+
+# 完整数据 / 转录中间产物 / 体检报告：版权边界，不公开分发
+data/baseline-formulas.json
+data/check-report.txt
+data/formulas.full.json
+data/raw/
+data/patches/
+data/snapshot-*.json
+pages/scan/
+yanfang-pdf/
+
+# 编辑器 / 系统
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+*.bak
+*.bak2*
+*~

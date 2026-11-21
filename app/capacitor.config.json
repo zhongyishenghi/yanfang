@@ -1,0 +1,21 @@
+{
+  "appId": "vip.zhongyisheng.yanfang",
+  "appName": "易圣验方",
+  "webDir": "www-offline",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#faf8f3"
+    },
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

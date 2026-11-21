@@ -1,0 +1,365 @@
+{
+ "schema": 2,
+ "version": 1,
+ "updated_at": "2026-11-20",
+ "edition": "public",
+ "note": "公开版字段样例：只收 5 首《伤寒论》《金匮要略》古方，用于演示数据 schema 与检索效果。两书均已成书一千八百余年，属公有领域；组成、主治、用法为历代通行表述，药量为现代临床折算，非原书度量衡。完整资料集不随源码分发（见 DATA.md）。",
+ "fields_policy": {
+  "keep": [
+   "id",
+   "source_no(内部)",
+   "name",
+   "doctor",
+   "doctor_info(纯事实)",
+   "category",
+   "disease_group",
+   "herbs",
+   "functions",
+   "indications",
+   "usage",
+   "tags",
+   "source",
+   "pinyin",
+   "abbr",
+   "updated_at",
+   "v"
+  ],
+  "drop": [
+   "analysis",
+   "commentary",
+   "modifications",
+   "cases",
+   "raw_text",
+   "原书页图",
+   "章节编号外显"
+  ]
+ },
+ "herb_alias": {
+  "云苓": "茯苓",
+  "清半夏": "半夏",
+  "姜半夏": "半夏",
+  "法半夏": "半夏",
+  "制半夏": "半夏",
+  "川牛膝": "牛膝"
+ },
+ "formulas": [
+  {
+   "id": "sh-1-01",
+   "source_no": "1.1",
+   "name": "桂枝汤",
+   "doctor": "张仲景",
+   "doctor_info": "东汉南阳人，著《伤寒杂病论》，后世尊为医圣。",
+   "category": "伤寒论",
+   "disease_group": "太阳中风表虚证",
+   "herbs": [
+    {
+     "raw": "桂枝 9 克",
+     "name": "桂枝",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "白芍 9 克",
+     "name": "白芍",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "生姜 9 克",
+     "name": "生姜",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "大枣 4 枚",
+     "name": "大枣",
+     "dose": "4枚",
+     "note": ""
+    },
+    {
+     "raw": "炙甘草 6 克",
+     "name": "炙甘草",
+     "dose": "6克",
+     "note": ""
+    }
+   ],
+   "functions": "解肌发表，调和营卫。",
+   "indications": "太阳中风表虚证。头痛发热，汗出恶风，鼻鸣干呕，口不渴，舌苔薄白，脉浮缓或浮弱者。",
+   "usage": "水煎服，日一剂，分三次温服。服后啜热稀粥一碗，温覆一时许，取遍身微似有汗为度。",
+   "tags": [
+    "太阳中风",
+    "表虚证",
+    "汗出恶风",
+    "头痛发热",
+    "鼻鸣干呕",
+    "脉浮缓"
+   ],
+   "source": {
+    "book": "伤寒论",
+    "cite": "辨太阳病脉证并治上·第 12 条"
+   },
+   "pinyin": "guizhitang",
+   "abbr": "gzt",
+   "doctor_pinyin": "zhangzhongjing"
+  },
+  {
+   "id": "sh-1-02",
+   "source_no": "1.2",
+   "name": "麻黄汤",
+   "doctor": "张仲景",
+   "doctor_info": "东汉南阳人，著《伤寒杂病论》，后世尊为医圣。",
+   "category": "伤寒论",
+   "disease_group": "外感风寒表实证",
+   "herbs": [
+    {
+     "raw": "麻黄 9 克",
+     "name": "麻黄",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "桂枝 6 克",
+     "name": "桂枝",
+     "dose": "6克",
+     "note": ""
+    },
+    {
+     "raw": "杏仁 9 克",
+     "name": "杏仁",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "炙甘草 3 克",
+     "name": "炙甘草",
+     "dose": "3克",
+     "note": ""
+    }
+   ],
+   "functions": "发汗解表，宣肺平喘。",
+   "indications": "外感风寒表实证。恶寒发热，头身疼痛，无汗而喘，舌苔薄白，脉浮紧。",
+   "usage": "水煎服，日一剂，分三次温服，温覆取微汗，汗出即止，不必尽剂。",
+   "tags": [
+    "风寒表实",
+    "无汗而喘",
+    "恶寒发热",
+    "头身疼痛",
+    "脉浮紧"
+   ],
+   "source": {
+    "book": "伤寒论",
+    "cite": "辨太阳病脉证并治中·第 35 条"
+   },
+   "pinyin": "mahuangtang",
+   "abbr": "mht",
+   "doctor_pinyin": "zhangzhongjing"
+  },
+  {
+   "id": "sh-1-03",
+   "source_no": "1.3",
+   "name": "小柴胡汤",
+   "doctor": "张仲景",
+   "doctor_info": "东汉南阳人，著《伤寒杂病论》，后世尊为医圣。",
+   "category": "伤寒论",
+   "disease_group": "少阳证",
+   "herbs": [
+    {
+     "raw": "柴胡 12 克",
+     "name": "柴胡",
+     "dose": "12克",
+     "note": ""
+    },
+    {
+     "raw": "黄芩 9 克",
+     "name": "黄芩",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "人参 6 克",
+     "name": "人参",
+     "dose": "6克",
+     "note": ""
+    },
+    {
+     "raw": "半夏 9 克",
+     "name": "半夏",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "炙甘草 6 克",
+     "name": "炙甘草",
+     "dose": "6克",
+     "note": ""
+    },
+    {
+     "raw": "生姜 9 克",
+     "name": "生姜",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "大枣 4 枚",
+     "name": "大枣",
+     "dose": "4枚",
+     "note": ""
+    }
+   ],
+   "functions": "和解少阳。",
+   "indications": "少阳证。往来寒热，胸胁苦满，默默不欲饮食，心烦喜呕，口苦咽干目眩，脉弦。",
+   "usage": "水煎服，日一剂，分三次温服。",
+   "tags": [
+    "少阳证",
+    "往来寒热",
+    "胸胁苦满",
+    "心烦喜呕",
+    "口苦咽干",
+    "脉弦"
+   ],
+   "source": {
+    "book": "伤寒论",
+    "cite": "辨太阳病脉证并治中·第 96 条"
+   },
+   "pinyin": "xiaochaihutang",
+   "abbr": "xcht",
+   "doctor_pinyin": "zhangzhongjing"
+  },
+  {
+   "id": "jg-2-01",
+   "source_no": "2.1",
+   "name": "苓桂术甘汤",
+   "doctor": "张仲景",
+   "doctor_info": "东汉南阳人，著《伤寒杂病论》，后世尊为医圣。",
+   "category": "金匮要略",
+   "disease_group": "痰饮·中阳不足",
+   "herbs": [
+    {
+     "raw": "茯苓 12 克",
+     "name": "茯苓",
+     "dose": "12克",
+     "note": ""
+    },
+    {
+     "raw": "桂枝 9 克",
+     "name": "桂枝",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "白术 9 克",
+     "name": "白术",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "炙甘草 6 克",
+     "name": "炙甘草",
+     "dose": "6克",
+     "note": ""
+    }
+   ],
+   "functions": "温阳化饮，健脾利湿。",
+   "indications": "中阳不足，痰饮内停。胸胁支满，目眩心悸，短气而咳，舌苔白滑，脉弦滑或沉紧。",
+   "usage": "水煎服，日一剂，分三次温服。",
+   "tags": [
+    "痰饮",
+    "胸胁支满",
+    "目眩心悸",
+    "短气而咳",
+    "苔白滑"
+   ],
+   "source": {
+    "book": "金匮要略",
+    "cite": "痰饮咳嗽病脉证并治·第 16 条"
+   },
+   "pinyin": "lingguishugantang",
+   "abbr": "lgsgt",
+   "doctor_pinyin": "zhangzhongjing"
+  },
+  {
+   "id": "jg-2-02",
+   "source_no": "2.2",
+   "name": "大黄牡丹汤",
+   "doctor": "张仲景",
+   "doctor_info": "东汉南阳人，著《伤寒杂病论》，后世尊为医圣。",
+   "category": "金匮要略",
+   "disease_group": "肠痈初起",
+   "herbs": [
+    {
+     "raw": "大黄 12 克",
+     "name": "大黄",
+     "dose": "12克",
+     "note": ""
+    },
+    {
+     "raw": "牡丹皮 9 克",
+     "name": "牡丹皮",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "桃仁 9 克",
+     "name": "桃仁",
+     "dose": "9克",
+     "note": ""
+    },
+    {
+     "raw": "冬瓜仁 30 克",
+     "name": "冬瓜仁",
+     "dose": "30克",
+     "note": ""
+    },
+    {
+     "raw": "芒硝 9 克",
+     "name": "芒硝",
+     "dose": "9克",
+     "note": ""
+    }
+   ],
+   "functions": "泻热破瘀，散结消肿。",
+   "indications": "肠痈初起，湿热瘀滞。右少腹疼痛拒按，甚则局部肿痞，大便不畅，小便自调，舌苔黄腻，脉滑数。",
+   "usage": "水煎服，日一剂。芒硝另包，待药液煮成后冲化服。",
+   "tags": [
+    "肠痈",
+    "右少腹疼痛",
+    "湿热瘀滞",
+    "大便不畅",
+    "苔黄腻",
+    "脉滑数"
+   ],
+   "source": {
+    "book": "金匮要略",
+    "cite": "疮痈肠痈浸淫病脉证并治·第 4 条"
+   },
+   "pinyin": "dahuangmudantang",
+   "abbr": "dhmdt",
+   "doctor_pinyin": "zhangzhongjing"
+  }
+ ],
+ "generated_at": "2026-11-20",
+ "built_with": {
+  "pinyin": "pinyin-map.json",
+  "formulas": 5
+ },
+ "parts": [
+  {
+   "name": "伤寒论",
+   "count": 3,
+   "chapters": 3
+  },
+  {
+   "name": "金匮要略",
+   "count": 2,
+   "chapters": 2
+  }
+ ],
+ "stats": {
+  "count": 5,
+  "herb_rows": 25,
+  "doctors": 1,
+  "parts": 2,
+  "chapters": 5,
+  "tag_rows": 28
+ }
+}

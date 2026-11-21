@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动画面：纸色底 + 居中标志（不用整图拉伸，避免不同屏幕比例把图标拉变形） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#F6F2E9"/>
+        </shape>
+    </item>
+    <item android:gravity="center">
+        <bitmap android:gravity="center" android:src="@drawable/splash_logo"/>
+    </item>
+</layer-list>

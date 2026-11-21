@@ -1,0 +1,23 @@
+{
+  "name": "yanfang",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "易圣验方 · 方剂资料检索（离线优先，内容数据驱动）",
+  "scripts": {
+    "build": "node ../tools/build-data.mjs",
+    "offline": "node ../tools/build-offline.mjs",
+    "test": "node ../tools/test-search.mjs && node ../tools/test-update.mjs",
+    "sync": "node ../tools/build-offline.mjs && cap sync android",
+    "apk": "cd android && gradlew.bat assembleRelease",
+    "android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "pinyin": "^4.0.0"
+  }
+}
