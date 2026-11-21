@@ -133,11 +133,7 @@
         var p = PREFIX[i];
         if (n.length > p.length + 1 && n.indexOf(p) === 0) {
           var rest = n.slice(p.length);
-          if (known.has(rest) || alias[rest]) {
-            out.push(rest);
-            // 剥前缀后的药名仍可能要归一（如「生麦门冬」→「麦门冬」→「麦冬」）
-            if (alias[rest] && out.indexOf(alias[rest]) < 0) out.push(alias[rest]);
-          }
+          if (known.has(rest) || alias[rest]) out.push(rest);
         }
       }
       return out;

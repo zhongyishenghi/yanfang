@@ -50,23 +50,10 @@ console.log('✓ 结构自洽：编号唯一 / 互指都有对应条目 / 分期
 
 const std = n => (db.herb_alias[n] || n);
 
-/* 1. 药名精确：茯苓 ≠ 土茯苓。
-   只对原库方剂做「命中=真正含茯苓」严格校验；古方(gf-)的方名常带药名
-   （如「茯苓湯」），检索命中属正常，不纳入此断言。 */
+/* 1. 药名精确：茯苓 ≠ 土茯苓 */
 const fu = names('茯苓');
-const origFu = new Set(db.formulas.filter(f => !f.id.startsWith('gf-') &&
-  f.herbs.some(h => std(h.name) === '茯苓')).map(f => f.name));
-const nameCount = {};
-for (const f of db.formulas) nameCount[f.name] = (nameCount[f.name] || 0) + 1;
-for (const nm of fu) {
-  // 同名方可能同时存在原库版与古方版；古方含「白茯苓」会让整个方名命中，
-  // 此时无法归责到某一个方，跳过。仅对「唯一原库方」做严格校验。
-  if (nameCount[nm] > 1) continue;
-  const f = db.formulas.find(x => x.name === nm);
-  if (!f || f.id.startsWith('gf-')) continue;
-  assert.ok(origFu.has(nm), `搜「茯苓」命中的「${nm}」应含茯苓`);
-}
-assert.ok(names('茯苓').some(nm => origFu.has(nm)), '原库含茯苓的方应能被检索到');
+const hasRealFuling = db.formulas.filter(f => f.herbs.some(h => std(h.name) === '茯苓')).map(f => f.name);
+assert.deepEqual(new Set(fu), new Set(hasRealFuling), '搜「茯苓」只应命中真正含茯苓的方');
 assert.ok(!fu.includes('柴胡解毒汤'), '柴胡解毒汤只有土茯苓，不该被「茯苓」命中');
 assert.ok(names('土茯苓').includes('柴胡解毒汤'), '搜「土茯苓」应命中柴胡解毒汤');
 console.log('✓ 茯苓 / 土茯苓 不串味');
@@ -104,11 +91,8 @@ console.log('✓ 拼音 / 缩写命中');
 const combo = names('柴胡 黄芩');
 const expect = db.formulas.filter(f =>
   f.herbs.some(h => h.name === '柴胡') && f.herbs.some(h => h.name === '黄芩')).map(f => f.name);
-// 核心性质：药味 AND 的结果必须全部命中。
-// 检索是全文多字段打分（方名/主治/正文也算分），combo 可能比 expect 多，属正常。
-for (const nm of expect) assert.ok(combo.includes(nm), `含柴胡+黄芩的「${nm}」应被组合检索命中`);
-assert.ok(combo.length >= expect.length, '组合检索结果不应少于药味AND结果');
-console.log(`✓ 组合检索「柴胡 黄芩」：${combo.length} 首（药味AND ${expect.length} 首）`);
+assert.deepEqual(new Set(combo), new Set(expect), '多药组合应是 AND 关系');
+console.log(`✓ 组合检索「柴胡 黄芩」：${combo.length} 首`);
 
 /* 9. 类型筛选 */
 const onlyDoctor = S.search(db, idx, '刘渡舟', { type: 'name' });
@@ -158,15 +142,7 @@ assert.ok(sha.includes('1.4') && sha.includes('2.2'), '未定南北的「沙参�
 assert.ok(sha.length >= 2, '「沙参」至少要命中那两首');
 assert.equal(herbHits('南沙参').includes('1.4'), false, '「南沙参」不该吞掉只写「沙参」的条');
 assert.ok(!herbHits('北沙参').some(s => s === '1.4'), '「北沙参」不该吞掉只写「沙参」的条');
-/* 「白药」存疑不并入白芍：搜白药命中的每一条，药味里必须真有名为「白药」的药；
-   且写作白药的方不应被白芍吞掉。古方里「白药」是真实药材，会有多首命中。 */
-const baiYaoHits = herbHits('白药');
-assert.ok(baiYaoHits.includes('1.4'), '原文写作「白药」的方应命中');
-for (const sno of baiYaoHits) {
-  const bf = db.formulas.filter(f => f.source_no === sno);
-  assert.ok(bf.some(f => f.herbs.some(h => h.name === '白药')),
-    `搜「白药」命中的 ${sno} 应真含「白药」药味`);
-}
+assert.deepEqual(herbHits('白药'), ['1.4'], '「白药」存疑，不并入白芍');
 assert.equal(herbHits('白芍').includes('1.4'), false, '「白芍」不该命中写作「白药」的条');
 console.log('✓ 存疑不归一：沙参 / 白药 未被强行合并');
 
