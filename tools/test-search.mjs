@@ -49,10 +49,12 @@ for (const f of db.formulas.filter(x => x.sub_formulas && x.sub_formulas.length)
 console.log('✓ 结构自洽：编号唯一 / 互指都有对应条目 / 分期方子方齐全');
 
 const std = n => (db.herb_alias[n] || n);
+// 药典方药名可能带炮制后缀，如「茯苓（去皮）」；判定时先剥括号
+const baseName = n => String(n || '').replace(/[（(][^）)]*[）)]/g, '').trim();
 
 /* 1. 药名精确：茯苓 ≠ 土茯苓 */
 const fu = names('茯苓');
-const hasRealFuling = db.formulas.filter(f => f.herbs.some(h => std(h.name) === '茯苓')).map(f => f.name);
+const hasRealFuling = db.formulas.filter(f => f.herbs.some(h => std(baseName(h.name)) === '茯苓')).map(f => f.name);
 assert.deepEqual(new Set(fu), new Set(hasRealFuling), '搜「茯苓」只应命中真正含茯苓的方');
 assert.ok(!fu.includes('柴胡解毒汤'), '柴胡解毒汤只有土茯苓，不该被「茯苓」命中');
 assert.ok(names('土茯苓').includes('柴胡解毒汤'), '搜「土茯苓」应命中柴胡解毒汤');
@@ -101,7 +103,10 @@ const onlyHerb = S.search(db, idx, '柴胡', { type: 'herb' });
 /* 炮制写法算同一味药：醋柴胡、炒柴胡在索引里就是柴胡（剥前缀是检索内核的既定规则），
    所以这里不能只认 name === '柴胡'，否则「疏乳消块丸」的醋柴胡会被判成误命中。 */
 const HERB_PREFIX = /^(炒|炙|制|清|姜|法|生|煅|醋|酒|蜜|焦|盐|麸|砂|鲜|干|熟|煨|炮)/;
-const hasHerb = (f, n) => f.herbs.some(h => h.name === n || h.name.replace(HERB_PREFIX, '') === n);
+const hasHerb = (f, n) => f.herbs.some(h => {
+  const b = baseName(h.name).replace(HERB_PREFIX, '');
+  return b === n;
+});
 assert.ok(onlyHerb.every(r => hasHerb(r.formula, '柴胡')), '限定药味维度应只返回含该药');
 console.log(`✓ 维度筛选：方名=0 / 药味=${onlyHerb.length}`);
 

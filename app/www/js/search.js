@@ -125,15 +125,31 @@
     });
     Object.keys(alias).forEach(function (k) { known.add(k); });
 
+    function addWithAlias(out, n) {
+      if (out.indexOf(n) < 0) out.push(n);
+      var m = alias[n];
+      if (m && out.indexOf(m) < 0) out.push(m);
+    }
     function variants(n) {
       var out = [n];
       var mapped = alias[n];
       if (mapped) out.push(mapped);
+      // 剥括号炮制注：药典写法如「附子（制）」「半夏（制）」「茯苓（去皮）」
+      var noParen = String(n).replace(/[（(][^）)]*[）)]/g, '').trim();
+      if (noParen && noParen !== n) addWithAlias(out, noParen);
       for (var i = 0; i < PREFIX.length; i++) {
         var p = PREFIX[i];
         if (n.length > p.length + 1 && n.indexOf(p) === 0) {
           var rest = n.slice(p.length);
-          if (known.has(rest) || alias[rest]) out.push(rest);
+          if (known.has(rest) || alias[rest]) {
+            out.push(rest);
+            if (alias[rest] && out.indexOf(alias[rest]) < 0) out.push(alias[rest]);
+          }
+        }
+        // 剥括号后再剥前缀：如「姜半夏（制）」→「半夏」
+        if (noParen && noParen.length > p.length + 1 && noParen.indexOf(p) === 0) {
+          var rest2 = noParen.slice(p.length);
+          if (known.has(rest2) || alias[rest2]) addWithAlias(out, rest2);
         }
       }
       return out;
