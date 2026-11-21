@@ -50,7 +50,7 @@ assert.equal(next.version, to, '版本 +1');
 assert.equal(next.formulas.length, total, '删 1 增 1 后总数不变');
 assert.ok(!next.formulas.some(f => f.id === removedId), '墓碑删除生效');
 assert.ok(next.formulas.some(f => f.id === 'nk-99-01'), '新增方生效');
-assert.equal(next.formulas.find(f => f.id === 'nk-1-01').tags.includes('测试新增标签'), true, '修改生效');
+assert.equal(next.formulas.find(f => f.id === revised.id).tags.includes('测试新增标签'), true, '修改生效');
 assert.equal(next.herb_alias['北芪'], '黄芪', '别名增量合并');
 assert.equal(db.version, from, '不得改动原对象');
 assert.equal(db.formulas.length, total, '原对象未被污染');

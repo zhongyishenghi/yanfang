@@ -20,9 +20,8 @@ jobs:
       - name: 离线包构建（内含无联网断言）
         run: node tools/build-offline.mjs
 
-      # 公开仓只带 5 副样例，用样例版用例；完整库的严格用例是 tools/test-search.mjs
-      - name: 检索内核用例（公开样例）
-        run: node tools/test-search-sample.mjs
+      - name: 检索内核用例（完整库）
+        run: node tools/test-search.mjs
 
       - name: 更新逻辑用例
         run: node tools/test-update.mjs

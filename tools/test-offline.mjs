@@ -70,10 +70,6 @@ window.XMLHttpRequest.prototype.open = function (u) { window.__net++; window.__n
 </script>`;
 
 const db = JSON.parse(fs.readFileSync(path.join(root, 'data/formulas.json'), 'utf8'));
-if (db.formulas.length < 50) {
-  console.log(`当前数据只有 ${db.formulas.length} 副（公开样例），本用例针对完整库，跳过；样例请跑 tools/test-search-sample.mjs。`);
-  process.exit(0);
-}
 
 function page(extra, done, wait = 3200) {
   /* extra 是若干条 setTimeout，必须包进 <script> 才会执行 */
