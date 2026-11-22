@@ -24,7 +24,9 @@
 
 **安卓手机、平板**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.7.apk`，点开安装。系统提示「禁止安装未知来源应用」时允许这一次即可，装好后桌面出现「易圣验方」，不用联网。
 
-**电脑（Windows / macOS / Linux）**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.7-web.zip`，解压后双击里面的 `index.html`，用浏览器打开。不用安装。
+**电脑（Windows / macOS / Linux）**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.7-web.zip`，解压后第一层就是 `index.html`，双击用浏览器打开。不用安装，也不用在子目录里翻。
+
+> Release 页面上的 `Source code (zip/tar.gz)` 是给开发者的源代码，解压出来是整套工程，别下那个。
 
 想自己从源码出包：`node tools/build-offline.mjs && cd app && npx cap sync android && cd android && ./gradlew.bat assembleRelease`（需 JDK 21、Android SDK 35，签名证书自备）。
 

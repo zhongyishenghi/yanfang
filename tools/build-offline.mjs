@@ -163,12 +163,11 @@ try {
   execFileSync('python', ['-c', `
 import os, zipfile
 root = r"${out}"
-base = os.path.dirname(root)
 z = zipfile.ZipFile(r"${zipPath}", "w", zipfile.ZIP_DEFLATED)
 for dp, dn, fn in os.walk(root):
     for f in fn:
         p = os.path.join(dp, f)
-        z.write(p, os.path.relpath(p, base))
+        z.write(p, os.path.relpath(p, root))
 z.close()
 `], { stdio: 'inherit' });
 } catch (e) {
