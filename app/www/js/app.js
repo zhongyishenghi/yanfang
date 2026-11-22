@@ -77,7 +77,10 @@
        fromIndex：当前检索结果是从索引页点条目进来的，返回先回索引首页；
        fromDetail：当前检索结果是从某副方的标签/快捷词跳出来的，返回先回那副方。 */
     fromIndex: false,
-    fromDetail: null
+    fromDetail: null,
+    /* 宽屏右栏当前挂的是哪种空态：'welcome' | 'hint' | null（挂的是方剂详情）。
+       用途只有一个——避免每次 resize 都重写一遍 innerHTML。 */
+    emptyPane: null
   };
 
   var $ = function (s) { return document.querySelector(s); };
@@ -183,17 +186,74 @@
     var relMark = rel
       ? '<span class="dot">·</span><span class="rel-mark">' + esc(rel.short || '同方异名') + ' ' + esc(rel.source_no) + '</span>'
       : '';
+    /* 药典成方没有医家、也没有章节病名，空字段不占位、不留孤立的分隔点；
+       用「药典成方」顶掉医家那一格，卡片副行才不会只剩一个光秃秃的「3 味」。 */
+    var subSegs = [];
+    if (f.doctor) subSegs.push(hl(f.doctor, terms));
+    else if (f.category === '成药') subSegs.push(esc('药典成方'));
+    if (f.disease_group) subSegs.push(esc(f.disease_group));
+    subSegs.push(countText);
     return '' +
       '<article class="card' + (state.selected === f.id ? ' on' : '') + '" data-id="' + f.id + '" tabindex="0">' +
         '<div class="card-top">' +
           '<span class="no">' + esc(f.source_no) + '</span>' +
           '<h3>' + hl(f.name, terms) + '</h3>' +
         '</div>' +
-        '<div class="card-sub"><span>' + hl(f.doctor, terms) + '</span><span class="dot">·</span><span>' + esc(f.disease_group) + '</span>' +
-          '<span class="dot">·</span><span>' + countText + '</span>' + relMark + '</div>' +
+        '<div class="card-sub"><span>' + subSegs.join('</span><span class="dot">·</span><span>') + '</span>' + relMark + '</div>' +
         '<div class="card-herbs">' + esc(herbText) + '</div>' +
         (hitHTML ? '<div class="card-hit">' + hitHTML + '</div>' : '') +
       '</article>';
+  }
+
+  /* 首屏只画一页，滚到底再续。2086 张卡一次性进 DOM，平板切页签 / 开详情
+     要重排整棵列表，实测 1–2 秒；分批后首屏 DOM 只有几十张。 */
+  var PAGE = 60;
+
+  function rowsHTML(items, from, to, terms, prevKey) {
+    var out = '';
+    var last = prevKey;
+    for (var i = from; i < to; i++) {
+      var it = items[i];
+      var f = it.formula || it;
+      var key = groupKey(f);
+      if (key !== last) {
+        var t = chapterTitle(f);
+        out += '<div class="group-head">' + esc(chapterLabel(f)) + (t ? '　' + esc(t) : '') + '</div>';
+        last = key;
+      }
+      out += cardHTML(f, it.hits || [], terms);
+    }
+    return { html: out, lastKey: last };
+  }
+
+  function appendList(container, n) {
+    var items = container._items || [];
+    if (container._shown >= items.length) return;
+    var from = container._shown || 0;
+    var to = Math.min(from + n, items.length);
+    var r = rowsHTML(items, from, to, container._terms || [], container._prevKey);
+    container.insertAdjacentHTML('beforeend', r.html);
+    container._prevKey = r.lastKey;
+    container._shown = to;
+  }
+
+  function renderList(container, items, terms, empty) {
+    container._items = items;
+    container._terms = terms || [];
+    container._prevKey = null;
+    container._shown = 0;
+    container._seq = items.map(function (it) { return (it.formula || it).id; });
+    if (!items.length) { container.innerHTML = empty || ''; return; }
+    container.innerHTML = '';
+    appendList(container, PAGE);
+  }
+
+  function moreOnScroll(e) {
+    var pane = e.currentTarget;
+    var list = pane === el.panes.fav ? el.favList : el.list;
+    if (list._shown >= (list._items || []).length) return;
+    /* 离底还有一屏多就开始续，滚动不会看到空白等待 */
+    if (pane.scrollHeight - pane.scrollTop - pane.clientHeight < 900) appendList(list, PAGE);
   }
 
   function renderSearch() {
@@ -211,38 +271,18 @@
     }
 
     if (!state.q) {
-      var html = '';
-      var lastCh = null;
-      db.formulas.forEach(function (f) {
-        var key = groupKey(f);
-        if (key !== lastCh) {
-          var t = chapterTitle(f);
-          html += '<div class="group-head">' + esc(chapterLabel(f)) + (t ? '　' + esc(t) : '') + '</div>';
-          lastCh = key;
-        }
-        html += cardHTML(f, [], []);
-      });
-      el.list.innerHTML = html;
+      renderList(el.list, db.formulas, [], '');
       return;
     }
 
     if (!rows.length) {
       el.list.innerHTML = emptyHTML(state.q);
+      el.list._items = [];
+      el.list._seq = [];
       return;
     }
 
-    var out = '';
-    var last = null;
-    rows.forEach(function (r) {
-      var key = groupKey(r.formula);
-      if (key !== last) {
-        var t2 = chapterTitle(r.formula);
-        out += '<div class="group-head">' + esc(chapterLabel(r.formula)) + (t2 ? '　' + esc(t2) : '') + '</div>';
-        last = key;
-      }
-      out += cardHTML(r.formula, r.hits, terms);
-    });
-    el.list.innerHTML = out;
+    renderList(el.list, rows, terms, '');
   }
 
   /** 检索无结果时，给出相近药名/方名建议 —— 精确匹配的代价是可能搜不到，这里补一手 */
@@ -369,6 +409,23 @@
         }).join('') + '</div>'
       : '';
 
+    /* 同方不同剂型：药典把同一处方做成丸、片、胶囊、颗粒等多种剂型，各自成条。
+       这里一次列全，点一下就换到那个剂型，省得在一个个搜索结果里猜区别。 */
+    var famLine = '';
+    if (f.family) {
+      var sibs = ((idx.family && idx.family.get(f.family)) || []).filter(function (x) {
+        return x.id !== f.id;
+      });
+      if (sibs.length) {
+        famLine = '<div class="d-fam">' +
+          '<span class="fm-h">同一处方 · ' + (sibs.length + 1) + ' 种剂型</span>' +
+          sibs.map(function (x) {
+            return '<button data-rel="' + esc(x.id) + '">' + esc(x.name) + '</button>';
+          }).join('') +
+        '</div>';
+      }
+    }
+
     var tagBtns = (f.tags || []).map(function (t) {
       return '<button data-tag="' + esc(t) + '">' + esc(t) + '</button>';
     }).join('');
@@ -406,15 +463,26 @@
       '</div>' +
       '<div class="d-hint">左右滑动翻方</div>';
 
+    /* 药典成方不署医家（药典正文就没有这一栏），不拿「佚」冒充佚名，
+       改标「药典成方」，头像用「典」字；章节病名为空时也不留孤立分隔点。 */
+    var isPatent = f.category === '成药';
+    var docName = f.doctor || (isPatent ? '药典成方' : '佚名');
+    var docChar = (isPatent && !f.doctor) ? '典' : docName.charAt(0);
+    var noLine = [f.source_no, f.category, f.disease_group]
+      .filter(function (x) { return x; })
+      .map(function (x) { return esc(x); })
+      .join('　·　');
+
     return '' +
       '<button class="back" id="back">← 返回列表</button>' +
       '<div class="d-head">' +
-        '<div class="d-no"><span>' + esc(f.source_no) + '　·　' + esc(f.category) + '　·　' + esc(f.disease_group) + '</span>' + posTag + '</div>' +
+        '<div class="d-no"><span>' + noLine + '</span>' + posTag + '</div>' +
         '<h2>' + esc(f.name) + '</h2>' + akaLine +
-        '<div class="d-dr"><span class="avatar">' + esc((f.doctor || '佚')[0]) + '</span><span>' + esc(f.doctor) + '</span>' +
+        '<div class="d-dr"><span class="avatar">' + esc(docChar) + '</span><span>' + esc(docName) + '</span>' +
           '<button class="fav-btn' + (isFav ? ' on' : '') + '" data-fav="' + f.id + '">' + (isFav ? '已收藏' : '收藏') + '</button>' +
         '</div>' +
         relLine +
+        famLine +
       '</div>' +
 
       '<div class="block"><h4>组成 <span>' + compCount + '</span></h4>' +
@@ -437,18 +505,41 @@
       navHTML;
   }
 
+  /* 欢迎卡上的病名快捷入口。
+     章节标题重名是正常的：内科·便秘 与 碑方·便秘 是两章不同的内容，标题都叫「便秘」。
+     以前按章节逐条渲染，欢迎卡上就出现两个「便秘 14」。按标题去重即可——
+     计数本来就是按标题在全库匹配的，同名多章合起来算一次才对。
+     另外计数改成一次遍历：211 章 × 2086 首逐个筛要白跑 44 万次。 */
+  function topChapters(limit) {
+    var seen = {};
+    var titles = [];
+    (db.chapters || []).forEach(function (c) {
+      var t = c.title;
+      if (!t || seen[t]) return;
+      /* 复合病名（「小儿感冒、支气管炎」）拆开后每段太泛，不进快捷入口 */
+      if (S.diseaseTerms(t).length !== 1) return;
+      seen[t] = 1;
+      titles.push(t);
+    });
+    var count = {};
+    db.formulas.forEach(function (f) {
+      S.diseaseTerms(f.disease_group).forEach(function (t) {
+        if (seen[t]) count[t] = (count[t] || 0) + 1;
+      });
+    });
+    return titles
+      .map(function (t) { return { t: t, n: count[t] || 0 }; })
+      .filter(function (x) { return x.n > 0; })
+      .sort(function (a, b) { return b.n - a.n; })
+      .slice(0, limit);
+  }
+
   function emptyDetailHTML() {
     var docs = S.facets(idx, 'doctors', 6);
 
-    var chBtns = (db.chapters || []).map(function (c) {
-      var n = db.formulas.filter(function (f) {
-        return S.diseaseTerms(f.disease_group).indexOf(c.title) >= 0;
-      }).length;
-      return { t: c.title, n: n };
-    }).filter(function (x) { return x.n > 0 && S.diseaseTerms(x.t).length === 1; })
-      .sort(function (a, b) { return b.n - a.n; }).slice(0, 8).map(function (x) {
-        return '<button data-shortcut="' + esc(x.t) + '" data-kind="disease">' + esc(x.t) + '<i>' + x.n + '</i></button>';
-      }).join('');
+    var chBtns = topChapters(8).map(function (x) {
+      return '<button data-shortcut="' + esc(x.t) + '" data-kind="disease">' + esc(x.t) + '<i>' + x.n + '</i></button>';
+    }).join('');
 
     var drBtns = docs.map(function (d) {
       return '<button data-shortcut="' + esc(d.name) + '" data-kind="doctor">' + esc(d.name) + '<i>' + d.count + '</i></button>';
@@ -467,8 +558,40 @@
       '</div>';
   }
 
+  /* 收藏页右栏的空态。以前这里复用检索页的欢迎卡，收藏页上顶着「共 2086 副剂方」很莫名其妙。 */
+  function hintDetailHTML() {
+    return '<div class="d-empty"><div class="big">收藏</div>' +
+      '<p>从左侧点一方查看详情。<br>' +
+      '右栏会一直留在这儿，翻下一副不用来回切。</p></div>';
+  }
+
+  function emptyPaneHTML() {
+    return state.view === 'fav' ? hintDetailHTML() : emptyDetailHTML();
+  }
+
+  /* 宽屏右栏在没有选中方剂时该挂什么，统一由这里决定。
+     不能在启动时用 innerWidth 判一次就算完：WebView 常常先按竖屏布局
+     （此时 innerWidth < 900）再把窗口转成横屏，那一次判断会把右栏判成"该隐藏"，
+     之后没人再填内容 —— 这就是横屏时右栏一片空白的原因。
+     所以启动、切页签、resize、转屏都要回来收口。 */
+  function syncDetailPane() {
+    if (window.innerWidth < 900) {
+      if (!state.selected) el.detail.hidden = true;
+      return;
+    }
+    if (document.body.classList.contains('view-wide')) { el.detail.hidden = true; return; }
+    el.detail.hidden = false;
+    if (state.selected) return;
+    var want = state.view === 'fav' ? 'hint' : 'welcome';
+    if (state.emptyPane === want) return;
+    el.detail.innerHTML = emptyPaneHTML();
+    state.emptyPane = want;
+  }
+
   /* ---------- 详情：浏览序列 + 翻方 ---------- */
   function seqOf(container) {
+    /* 列表渲染时已经算过一遍顺序，别在每次点卡片时再遍历上千个 DOM 节点 */
+    if (container && container._seq) return container._seq;
     return Array.prototype.map.call(
       container.querySelectorAll('.card[data-id]'),
       function (c) { return c.getAttribute('data-id'); }
@@ -483,16 +606,32 @@
   function paintDetail(id, scrollTop) {
     var f = idx.byId.get(id);
     if (!f) return;
+    var prev = state.selected;
     state.selected = id;
     el.detail.classList.remove('slide-next', 'slide-prev');   // 翻方动画由 stepDetail 决定要不要加
     el.detail.style.transform = '';
     el.detail.innerHTML = detailHTML(f);
+    state.emptyPane = null;
     el.detail.hidden = false;
     document.body.classList.add('showing-detail');
     el.detail.scrollTop = scrollTop || 0;
-    document.querySelectorAll('.card').forEach(function (c) {
-      c.classList.toggle('on', c.getAttribute('data-id') === id);
-    });
+    /* 全库 2086 张卡片，逐张 classList.toggle 会让平板点一下卡住 1–2 秒。
+       选中态全场只有一张：只撤旧卡、点新卡。 */
+    if (prev && prev !== id) {
+      var oldCard = document.querySelector('.card.on[data-id="' + prev + '"]');
+      if (oldCard) oldCard.classList.remove('on');
+    }
+    var newCard = document.querySelector('.card[data-id="' + id + '"]');
+    if (newCard) newCard.classList.add('on');
+  }
+
+  /* 从「同一处方 · N 种剂型」或同方异名跳过去以后，左栏那张卡的选中态常常正好在可视区外，
+     看着像根本没选中。把它拉回视野。列表是分批渲染的，卡片不在 DOM 里就当没事发生。 */
+  function revealCard(id) {
+    var c = document.querySelector('.card.on[data-id="' + id + '"]');
+    if (!c || !c.scrollIntoView) return;
+    try { c.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+    catch (err) { /* 老 WebView 不认 options 对象，忽略即可，不该因此中断跳转 */ }
   }
 
   /* origin：点开卡片时所在的容器；没有容器（深链、同方异名）就退回全书原书顺序 */
@@ -553,13 +692,16 @@
 
   function closeDetail() {
     document.body.classList.remove('showing-detail');
+    var sel = state.selected;
     state.selected = null;
     state.seqAt = -1;
-    document.querySelectorAll('.card').forEach(function (c) { c.classList.remove('on'); });
+    var cur = sel && document.querySelector('.card.on[data-id="' + sel + '"]');
+    if (cur) cur.classList.remove('on');
     if (window.innerWidth >= 900) {
-      // 宽屏保留右栏，回到欢迎态
-      el.detail.innerHTML = emptyDetailHTML();
-      el.detail.hidden = false;
+      // 宽屏保留右栏，回到空态（检索页是欢迎卡，收藏页是一句提示）
+      el.detail.innerHTML = '';
+      state.emptyPane = null;
+      syncDetailPane();
     } else {
       el.detail.hidden = true;
     }
@@ -633,23 +775,14 @@
     var ids = favs();
     var list = ids.map(function (id) { return idx.byId.get(id); }).filter(Boolean);
     el.favMeta.innerHTML = list.length ? '已收藏 <b>' + list.length + '</b> 副方剂' : '';
-    el.favList.innerHTML = list.length
-      ? list.map(function (f) { return cardHTML(f, [], []); }).join('')
-      : '<div class="empty"><div class="mark">空</div><p>在方剂详情里点「收藏」，就会出现在这里。</p></div>';
+    renderList(el.favList, list, [],
+      '<div class="empty"><div class="mark">空</div><p>在方剂详情里点「收藏」，就会出现在这里。</p></div>');
   }
 
   /* ---------- 关于 ---------- */
   function renderAbout() {
-    /* 关于页统计只保留三个口径：副方剂（条目数）、味中药（去重后的标准药名数）、位医家。
-       章节、部分不进统计。 */
-    var byBook = {};
-    db.formulas.forEach(function (f) {
-      var b = (f.source && f.source.book) || '未注明';
-      byBook[b] = (byBook[b] || 0) + 1;
-    });
-    var bookStats = '共 ' + db.formulas.length + ' 副方剂，分属 ' + Object.keys(byBook).length + ' 个来源：' +
-      Object.keys(byBook).map(function (b) { return esc(b) + ' ' + byBook[b] + ' 副'; }).join('；') + '。';
-
+    /* 2026-11-21：用户要求关于页不写数据来源、不写检索规则；
+       内容边界并入「这是什么」，版本并入「数据与隐私」，打赏放最末。 */
     el.about.innerHTML = '' +
       '<h2>易圣验方</h2><div class="sub">方剂资料检索 · 离线可用</div>' +
 
@@ -659,29 +792,34 @@
         '<div><b>' + idx.doctors.size + '</b>位医家</div>' +
       '</div>' +
 
-      '<section><h3>这是什么</h3><p>把名老中医方剂资料整理成可检索的结构化数据：方名、医家、病名、药味与剂量、功能、主治、用法。' +
-      '四类入口都能查，也可以空格分隔多味药，反查同时含这几味药的方子。</p></section>' +
-
-      '<section><h3>数据来源</h3><p>' + bookStats +
-      '只取事实字段：方名、医家、组成与剂量、功能、主治、用法。转录以原文为准，未作改写。' +
-      '数据版本 v' + db.version + '，更新于 ' + esc(db.updated_at || '—') + '。</p></section>' +
-
-      '<section><h3>检索规则</h3><p>' +
-      '药名是<b>精确匹配</b>：搜「茯苓」不会带出「土茯苓」，搜「生姜」不会带出「清半夏」。<br>' +
-      '病名分两层：主治原文里出现的词权重高，仅作为章节归类的权重低，避免「归在这一章」被当成「主治这个病」。<br>' +
-      '原书重出的同一方保留两条、按原页各自录，条目标「同方异名」互指，点一下可跳到对方。<br>' +
-      '支持拼音：输入 chaihujiedutang 或 chjdt 都能命中柴胡解毒汤。</p></section>' +
+      '<section><h3>这是什么</h3>' +
+      '<p>一个方剂资料库：把名老中医方剂与《中国药典》成方整理成可检索的结构化数据，' +
+      '每条都有方名、医家、病名、药味与剂量、功能、主治、用法。按方名、医家、病名、药味四类入口都能查，' +
+      '也可以在搜索框里用空格分隔几味药，反查同时含这几味药的方子。数据全部内置，不联网也能查。</p>' +
+      '<p>只收事实性字段。原书里的〔方解〕〔按语〕〔加减〕〔典型病例〕等论述性段落不进数据库，' +
+      'App 不放原书扫描页。药典成方按药典原文收录，不署个人医家，统一标为「药典成方」。' +
+      '本应用只作检索对照，不提供诊疗建议。</p></section>' +
 
       '<section><h3>免责声明</h3><div class="warn">' +
-      '本应用为方剂文献资料的检索工具，所收内容为文献中的事实性字段整理，供学习、研究与查阅使用。<br>' +
-      '剂量以原书为准：扫描件转录可能有识读偏差，引用前请核对原书。' +
-      '不提供诊疗服务，不构成用药建议，不替代执业医师的诊断与处方。<br>' +
-      '方剂的使用须由执业中医师辨证后决定；自行照方用药的风险由使用者自负。<br>' +
-      '如身体不适，请及时就医。</div></section>' +
+      '<p>本应用是方剂文献资料的检索工具，只收方名、组成、功能、主治、用法等事实性字段。</p>' +
+      '<p>不提供诊疗服务，不构成用药建议，不替代执业医师的诊断与处方；' +
+      '方剂的使用须由执业中医师辨证后决定，自行照方用药的风险由使用者自负。</p>' +
+      '<p>剂量以原书原文为准：转录可能有识读偏差，引用前请核对原书。' +
+      '药典成方所载剂量为投料量（如制 1000 丸、1000 片），不是单次服用量，' +
+      '实际用法用量以该方「用法」一项为准。</p>' +
+      '<p>如身体不适，请及时就医。</p></div></section>' +
+
+      /* 2026-11-20 起彻底不联网：安装包本身不含联网权限，这段同时是隐私说明的依据 */
+      '<section><h3>数据与隐私</h3>' +
+      '<p>完全离线。' + db.formulas.length + ' 副方剂全部内置在安装包里，检索与阅读全在本机完成；' +
+      '无账号、无登录，不检查更新，不统计装机量，不上传、不收集任何信息。' +
+      '安装包未申请网络权限，系统不允许联网。</p>' +
+      '<p>收藏只存在本机，卸载即清除。当前版本 <span class="nw">v' + esc(APPVER.name) + '（' + esc(APPVER.built) + '）</span>，' +
+      '内置数据 <span class="nw">v' + db.version + '</span>；新版直接覆盖安装，收藏不丢。</p></section>' +
 
       /* 打赏：只放个人收款码，不做任何权益承诺，条款必须显眼且不可跳过 */
       '<section><h3>自愿打赏</h3>' +
-      '<p>这个应用一直免费维护。若它对你确有帮助，可以自愿打赏，用于资料整理与后续增补。' +
+      '<p>本应用一直免费维护。若它对你确有帮助，可以自愿打赏，用于资料整理与后续增补。' +
       '<b>不打赏同样能用全部功能</b>，内容、更新与使用体验都没有任何差别。</p>' +
       '<div class="donate-box">' +
         '<button class="don-qr" id="donate-qr" aria-label="放大微信收款二维码">' +
@@ -700,22 +838,7 @@
           '<li><b>不开具发票。</b>收款方为个人，非经营主体，无法提供发票或收据。</li>' +
           '<li><b>请想清楚再决定。</b>支付在你的微信里完成，应用不参与支付流程，也接触不到你的支付信息。</li>' +
         '</ul>' +
-      '</div></section>' +
-
-      /* 2026-11-20 起彻底不联网：安装包本身不含联网权限，这段同时是隐私说明的依据 */
-      '<section><h3>数据与隐私</h3><p>' +
-      '本应用不联网：' + db.formulas.length + ' 副方剂全部内置在安装包里，检索与阅读都在本机完成。<br>' +
-      '没有账号、没有登录、不检查更新、不统计装机量，不上传任何内容，也不收集使用记录与个人信息；' +
-      '安装包未申请网络权限，系统层面就不允许它发出任何请求。<br>' +
-      '收藏只写在本机存储里，卸载应用即清除。<br>' +
-      '数据版本 v' + db.version + '，更新于 ' + esc(db.updated_at || '—') + '；后续增补随新版本安装包一起发布。</p></section>' +
-
-      '<section><h3>版本</h3><p>当前版本 v' + esc(APPVER.name) + '（' + esc(APPVER.built) + ' 构建）。' +
-      '本版不检查更新，也不会向任何服务器发请求；有新版本时以新的安装包直接覆盖安装，原有收藏不会丢。</p></section>' +
-
-      '<section><h3>关于内容边界</h3><p>本应用只收录事实性字段：方名、医家、组成与剂量、功能、主治、用法、出处。' +
-      '原书中的〔方解〕〔按语〕〔加减〕〔典型病例〕等论述性段落不进入数据库，App 内不内置原书扫描页。' +
-      '方剂须由医师辨证施用，本应用只作资料检索与对照，不提供诊疗建议。</p></section>';
+      '</div></section>';
   }
 
   /* ---------- 视图切换 ----------
@@ -732,6 +855,8 @@
     });
     var bodyEl = document.querySelector('.body');
     if (bodyEl) bodyEl.classList.toggle('view-wide', v === 'index' || v === 'about');
+    /* 切页签也要收口右栏：从详情切到收藏，右栏该换成收藏的空态而不是继续挂着检索欢迎卡 */
+    syncDetailPane();
     if (v === 'index') renderIndex();
     if (v === 'fav') renderFav();
     if (v === 'about') renderAbout();
@@ -791,6 +916,10 @@
     if (card) openDetail(card.getAttribute('data-id'), 0, el.list);
   });
 
+  /* 滚动容器是 .pane，不是 .list；两处都要续页 */
+  el.panes.search.addEventListener('scroll', moreOnScroll, { passive: true });
+  el.panes.fav.addEventListener('scroll', moreOnScroll, { passive: true });
+
   el.favList.addEventListener('click', function (e) {
     var card = e.target.closest('.card');
     if (card) openDetail(card.getAttribute('data-id'), 0, el.favList);
@@ -844,6 +973,7 @@
       var at = state.seq.indexOf(rid);
       if (at >= 0) { state.seqAt = at; paintDetail(rid, 0); }
       else openDetail(rid, 0);
+      revealCard(rid);
       return;
     }
 
@@ -956,22 +1086,34 @@
     tick();
   })();
 
-  // 窗口变宽时把详情收回为右栏
+  // 窗口变宽 / 转屏时把右栏收口（含空态）
   var lastWide = window.innerWidth >= 900;
-  window.addEventListener('resize', function () {
+  function onViewport() {
     var wide = window.innerWidth >= 900;
-    if (wide === lastWide) return;
-    lastWide = wide;
-    if (wide) {
-      document.body.classList.remove('showing-detail');
-      el.scrim.hidden = true;
-      /* 用 paintDetail 而不是 openDetail：宽窄屏切换不该重置浏览序列 */
-      if (state.selected) paintDetail(state.selected, el.detail.scrollTop);
-      else { el.detail.hidden = false; el.detail.innerHTML = emptyDetailHTML(); }
-    } else if (state.selected) {
-      el.detail.hidden = false;
+    if (wide !== lastWide) {
+      lastWide = wide;
+      if (wide) {
+        document.body.classList.remove('showing-detail');
+        el.scrim.hidden = true;
+        /* 用 paintDetail 而不是 openDetail：宽窄屏切换不该重置浏览序列 */
+        if (state.selected) paintDetail(state.selected, el.detail.scrollTop);
+      } else if (state.selected) {
+        el.detail.hidden = false;
+      }
     }
+    syncDetailPane();
+  }
+  window.addEventListener('resize', onViewport);
+  /* 安卓转屏时 resize 有时早于视口真正定稿，再补一拍 */
+  window.addEventListener('orientationchange', function () {
+    setTimeout(onViewport, 120);
   });
+  /* 有的 WebView 转屏后只在视觉视口上报变化，window.resize 不一定来 */
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      setTimeout(syncDetailPane, 60);
+    });
+  }
 
   /* ---------- 更新按钮（关于页动态元素；只有联网模式才挂这组监听） ---------- */
   if (ONLINE) document.addEventListener('click', function (e) {
@@ -1001,9 +1143,29 @@
   });
 
   /* ---------- 启动 ---------- */
+  /* 空态先无条件渲出来，可见性交给 CSS：宽屏两栏下右栏必须有内容，
+     窄屏 detail 本来就不显示（多渲一次欢迎卡不值几个钱）。
+     以前用启动瞬间的 innerWidth 决定"要不要填"，WebView 那会儿常还按竖屏布局，
+     判成不该填以后就再没人填——平板横屏右侧一片空白就是这么来的。 */
+  /* 不设 hidden：窄屏由 CSS 的 .detail{display:none} 与 body.showing-detail 控制，
+     宽屏则必须常驻。一旦在这里把 hidden 置上，[hidden] 那条 !important 会把右栏藏死。 */
   el.detail.hidden = false;
-  if (window.innerWidth >= 900) el.detail.innerHTML = emptyDetailHTML();
-  else el.detail.hidden = true;
+  try {
+    el.detail.innerHTML = emptyDetailHTML();
+    state.emptyPane = 'welcome';
+  } catch (e) {
+    /* 空态渲染不该把整个启动拖死：塞一张最简的静态卡，并把错误直接摊在右栏 */
+    el.detail.innerHTML = '<div class="d-empty"><div class="big">易圣验方</div>' +
+      '<p>共 <b>' + db.formulas.length + '</b> 副方剂</p>' +
+      '<p style="color:#b03030">ERR: ' + (e && e.message ? e.message : e) + '</p></div>';
+    state.emptyPane = 'welcome';
+  }
+  /* 布局定稿后再收一次口：转屏 / 分屏 / 宽窄切换都可能让右栏该换成别的空态 */
+  syncDetailPane();
+  requestAnimationFrame(function () {
+    requestAnimationFrame(syncDetailPane);
+  });
+  [150, 400, 900, 1600].forEach(function (t) { setTimeout(syncDetailPane, t); });
 
   runSearch();
   setView('search');

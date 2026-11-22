@@ -22,13 +22,10 @@ const appRequire = createRequire(pathToFileURL(path.join(root, 'app/package.json
 const db = JSON.parse(fs.readFileSync(src, 'utf8'));
 
 /* ---------- 拼音 ---------- */
-let pinyinFn = null;
-try {
-  const mod = appRequire('pinyin');
-  pinyinFn = typeof mod === 'function' ? mod : (mod.default || null);
-} catch {
-  /* 没装 pinyin 包时走本地字典 */
-}
+/* 拼音一律走本地字典 pinyin-map.json。
+   之前装了 pinyin npm 包的仓库会走 npm，没装的走字典，两仓生成的 db.js 就不一致
+   （2026-11-22 实测 md5 不同）。字典已逐字校验，比多音字自动转换更可控。 */
+const pinyinFn = null;
 const map = fs.existsSync(mapFile) ? JSON.parse(fs.readFileSync(mapFile, 'utf8')) : {};
 let mapDirty = false;
 

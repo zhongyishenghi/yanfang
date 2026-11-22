@@ -54,7 +54,13 @@ em { font-style: normal; }
 .app {
   display: flex;
   flex-direction: column;
+  /* 先用 100%，再用 dvh 覆盖。WebView 低于 Chromium 108（这台平板是 101）不认 dvh，
+     只写 dvh 会让整条规则失效、高度退化成"由内容决定"：左栏 2000 多张卡把两栏一起撑到
+     八千多像素高，右栏空态被垂直居中推到视口外（横屏右侧一片空白），
+     列表的内滚也变成整页滚（翻页加载永远触发不了）。两头都写才稳。 */
+  height: 100%;
   height: 100dvh;
+  max-height: 100%;
   max-height: 100dvh;
 }
 
@@ -225,6 +231,10 @@ em { font-style: normal; }
   cursor: pointer;
   transition: transform .14s, border-color .14s, box-shadow .14s;
   overflow: hidden;
+  /* 全库一次渲染 1980 张卡，平板切换详情时隐藏/显示整张列表会重排全部节点。
+     让屏幕外的卡片跳过布局与绘制，滚动条用固定占位高度兜底。 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 92px;
 }
 .card::before {
   content: "";
@@ -475,6 +485,31 @@ em { font-style: normal; }
 }
 .d-rel button span { font-size: 12.5px; flex: 1; min-width: 0; }
 .d-rel button b { font-weight: 400; color: var(--ink-3); }
+/* 同一处方的其他剂型：名字短，用横向 chip 排一行，点一下换剂型 */
+.d-fam { margin-top: 12px; }
+.d-fam .fm-h {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: .09em;
+  color: var(--ink-3);
+  margin-bottom: 7px;
+}
+.d-fam button {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 5px 11px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+  background: var(--paper-3);
+  color: var(--ink-2);
+  font-size: 12px;
+  transition: all .14s;
+}
+.d-fam button:hover {
+  border-color: var(--cinnabar-2);
+  background: var(--cinnabar-bg);
+  color: var(--ink);
+}
 .d-dr .avatar {
   width: 26px; height: 26px;
   border-radius: 50%;
@@ -645,24 +680,68 @@ em { font-style: normal; }
 .facets button:hover { border-color: var(--cinnabar-2); background: var(--cinnabar-bg); }
 .facets button i { font-style: normal; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
-.about { max-width: 620px; }
-.about h2 { font-family: var(--serif); font-size: 22px; letter-spacing: .08em; margin-bottom: 4px; }
-.about .sub { font-size: 12.5px; color: var(--ink-3); letter-spacing: .1em; margin-bottom: 20px; }
-.about section { padding: 14px 0; border-top: 1px solid var(--line-2); }
-.about h3 { font-size: 13px; letter-spacing: .14em; color: var(--ink-3); margin-bottom: 8px; }
-.about p { font-size: 13.5px; line-height: 1.95; color: var(--ink-2); }
+/* ---------- 关于页 ---------- */
+.about { max-width: 640px; margin: 0 auto; }
+.about h2 { font-family: var(--serif); font-size: 23px; letter-spacing: .1em; margin-bottom: 5px; }
+.about .sub { font-size: 12.5px; color: var(--ink-3); letter-spacing: .12em; margin-bottom: 22px; }
+.about section { padding: 20px 0; border-top: 1px solid var(--line-2); }
+.about section:first-of-type { border-top: 0; padding-top: 20px; }
+/* 小节标题：朱砂短竖线 + 疏字距，比纯灰字更有层次 */
+.about h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--ink-2);
+  margin-bottom: 12px;
+}
+.about h3::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--cinnabar);
+}
+/* 中文正文：首行缩进两字，两端对齐，行距放宽，段落之间只留小间距 */
+.about p {
+  font-size: 14px;
+  line-height: 2.05;
+  color: var(--ink-2);
+  text-indent: 2em;
+  text-align: justify;
+  text-justify: inter-ideograph;
+  margin: 0 0 9px;
+}
+.about p:last-child { margin-bottom: 0; }
+/* 版本号、日期这类含连字符的串：宽屏不许从中间断开；窄屏（手机）容器只有
+   360 来 px，强制不断行会撑出边界，所以窄屏放回普通断行。 */
+@media (min-width: 560px) {
+  .about .nw { white-space: nowrap; }
+}
 .about .warn {
   background: #fdf3ee;
   border: 1px solid #f2d9cd;
   border-radius: 10px;
-  padding: 13px 15px;
-  font-size: 13px;
-  line-height: 1.95;
+  padding: 15px 18px;
+  font-size: 13.5px;
+  line-height: 2;
   color: #7b3a26;
 }
-.about .stats { display: flex; gap: 18px; flex-wrap: wrap; margin: 6px 0 2px; }
-.about .stats div { font-size: 12.5px; color: var(--ink-3); }
-.about .stats b { display: block; font-family: var(--serif); font-size: 21px; color: var(--ink); font-weight: 600; }
+.about .warn p { font-size: inherit; line-height: inherit; color: inherit; text-indent: 2em; margin: 0 0 8px; }
+.about .warn p:last-child { margin-bottom: 0; }
+.about .stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line-2);
+}
+.about .stats div { font-size: 12.5px; color: var(--ink-3); letter-spacing: .04em; }
+.about .stats b { display: block; font-family: var(--serif); font-size: 23px; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
 
 /* ---------- 关于页 · 自愿打赏 ---------- */
 .donate-box {
@@ -744,7 +823,7 @@ em { font-style: normal; }
 }
 .lightbox[hidden] { display: none; }
 .lb-body { max-width: 100%; max-height: 100%; overflow: auto; }
-.lb-body img { max-width: 100%; max-height: calc(100dvh - 60px); display: block; border-radius: 6px; }
+.lb-body img { max-width: 100%; max-height: calc(100vh - 60px); max-height: calc(100dvh - 60px); display: block; border-radius: 6px; }
 /* 收款码：限制放大倍率 + 按像素放大，边缘保持锐利，扫码更容易对上焦 */
 .lb-body.qr img { max-width: min(86vw, 380px); image-rendering: pixelated; border-radius: 4px; }
 .lb-body p { color: #d8cdb8; font-size: 13px; text-align: center; line-height: 2; }
@@ -791,16 +870,28 @@ em { font-style: normal; }
   .body {
     display: grid;
     grid-template-columns: minmax(340px, 400px) 1fr;
+    /* 行高必须钉死：留 auto 的话网格项上的 height:100% 会退化成 auto，
+       左栏 2086 张卡把行撑到八千多像素高，右栏跟着变高，
+       空态卡片"垂直居中"就被推到视口外 —— 平板横屏右侧发空就是这么来的。
+       钉成 100% 后两栏各自内滚，右栏高度等于可视高度。 */
+    grid-template-rows: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
-  .pane { border-right: 1px solid var(--line); }
-  .detail { display: block; transform: none; }
+  .pane { border-right: 1px solid var(--line); height: 100%; }
+  .detail { display: block; transform: none; height: 100%; }
   .back { display: none !important; }
   .scrim { display: none !important; }
 
   /* 索引与关于内容密度高，宽屏下占满整行更好读 */
   .body.view-wide { grid-template-columns: 1fr; }
-  .body.view-wide .detail { display: none; }
+  .body.view-wide .detail,
+  .body.view-wide .detail[hidden] { display: none; }
   .body.view-wide > .pane { border-right: 0; }
+  /* 索引/关于是居中排版的阅读页，滚动条会落在 860px 栏的右缘，看着像凭空多一道竖线。
+     滚动照样能用（触摸滑动），只是不画条。 */
+  .body.view-wide > .pane { scrollbar-width: none; }
+  .body.view-wide > .pane::-webkit-scrollbar { width: 0; }
   .body.view-wide #view-index,
   .body.view-wide #view-about {
     max-width: 860px;

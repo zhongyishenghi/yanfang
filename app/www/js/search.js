@@ -105,6 +105,7 @@
     var doctors = new Map(); // 医家 -> ids
     var tags = new Map();    // 病名 / 证候标签 -> ids
     var groups = new Map();  // 章节病名 -> ids
+    var family = new Map();  // 同方不同剂型的族名 -> 方对象数组（要保序，用数组）
 
     function push(map, key, id) {
       if (!key) return;
@@ -188,6 +189,13 @@
       });
       diseaseTerms(f.disease_group).forEach(function (t) { push(groups, t, f.id); });
       (f.tags || []).forEach(function (t) { push(tags, t, f.id); });
+      /* 同一处方不同剂型（六味地黄丸 / 软胶囊 / 颗粒…）归到一族，
+         详情页据此列出同方其他剂型，互相跳转。 */
+      if (f.family) {
+        var arr = family.get(f.family);
+        if (!arr) { arr = []; family.set(f.family, arr); }
+        arr.push(f);
+      }
     });
 
     return {
@@ -196,6 +204,7 @@
       doctors: doctors,
       tags: tags,
       groups: groups,
+      family: family,
       byId: new Map(db.formulas.map(function (f) { return [f.id, f]; })),
       /* 按「版本+部分+编号」索引：两版扫描本的编号会重号（176 处），键里必须带书名。
          主方要用它找自己名下的分期子方（sub_formulas）。 */

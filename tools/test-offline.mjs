@@ -90,6 +90,8 @@ function page(extra, done, wait = 3200) {
 
 const results = [];
 const check = (name, ok, detail) => { results.push({ name, ok, detail }); };
+/* 与 app/www/js/app.js 的 PAGE 保持一致：首屏只渲染一页，滚到底再续 */
+const PAGE = 60;
 
 /* 1. 首页：完全不联网（2026-11-20 起版本检查与装机统计整体下线），卡片与检索条照常 */
 const home = page('', `'NET=' + window.__net + ' URL=' + (window.__netUrl || '')
@@ -102,7 +104,22 @@ const home = page('', `'NET=' + window.__net + ' URL=' + (window.__netUrl || '')
       document.getElementById('view-search').clientWidth) < 1 ? 'y' : 'n')`);
 check('启动不发任何网络请求（零联网）', /NET=0\b/.test(home), home);
 check('没有版本提示条（已下线）', /UPD=无/.test(home), home);
-check('条目全部渲染', new RegExp('CARDS=' + db.formulas.length + '\\b').test(home), home);
+check('首屏分批渲染（全量 1980 张不进 DOM）', new RegExp('CARDS=' + PAGE + '\\b').test(home), home);
+
+/* 1b. 滚到底会续页，不是只有首屏 60 条 */
+const more = page(
+  `setTimeout(function(){
+     var p = document.getElementById('view-search');
+     for (var i = 0; i < 3; i++) {
+       p.scrollTop = p.scrollHeight;
+       p.dispatchEvent(new Event('scroll', {bubbles: false}));
+     }
+   }, 1200);`,
+  `'CARDS=' + document.querySelectorAll('.card').length`,
+  2400
+);
+const moreN = Number((more.match(/CARDS=(\d+)/) || [])[1] || 0);
+check('滚动续页会继续追加卡片', moreN > PAGE, more);
 /* 吸顶的必须是外面那条铺满整行的 .searchhead；
    如果还让圆角卡片自己 sticky，卡片两侧和圆角外会透出后面的文字 */
 check('搜索条吸顶且整条铺满（卡片自身不吸顶）',
@@ -196,7 +213,7 @@ const stale = page(
   `'NET=' + window.__net + ' CARDS=' + document.querySelectorAll('.card').length`,
   3200
 );
-check('旧本地副本不覆盖安装包数据', new RegExp('CARDS=' + db.formulas.length + '\\b').test(stale), stale);
+check('旧本地副本不覆盖安装包数据', new RegExp('CARDS=' + PAGE + '\\b').test(stale), stale);
 
 rmTmp();
 
