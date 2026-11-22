@@ -22,9 +22,11 @@
 
 ## 怎么用
 
-**电脑上**：点页面右上角绿色的 `Code` → `Download ZIP`，解压后双击 `app/www/index.html`，用浏览器打开就能用。不用安装，不用联网。
+**安卓手机、平板**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.7.apk`，点开安装。系统提示「禁止安装未知来源应用」时允许这一次即可，装好后桌面出现「易圣验方」，不用联网。
 
-**安卓手机、平板**：安装包暂时没有公开下载。想自己出包，先按 [DATA.md](DATA.md) 重建数据，再 `cd app && npx cap sync android && cd android && ./gradlew.bat assembleRelease`（需 JDK 21、Android SDK 35，签名证书自备）。
+**电脑（Windows / macOS / Linux）**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.7-web.zip`，解压后双击里面的 `index.html`，用浏览器打开。不用安装。
+
+想自己从源码出包：`node tools/build-offline.mjs && cd app && npx cap sync android && cd android && ./gradlew.bat assembleRelease`（需 JDK 21、Android SDK 35，签名证书自备）。
 
 ## 几句实话
 
@@ -38,4 +40,4 @@
 
 代码 MIT，整理后的数据一并公开。原始扫描页不在仓库里。
 
-想读代码、改数据或自己出包，看 [DATA.md](DATA.md)；想知道这东西是怎么来的，看 [关于这个软件.md](关于这个软件.md)。
+想读代码、改数据，看 [DATA.md](DATA.md)；想知道这东西是怎么来的，看 [关于这个软件.md](关于这个软件.md)。
