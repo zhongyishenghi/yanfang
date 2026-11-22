@@ -55,20 +55,22 @@ function toPinyin(text) {
   let full = '';
   let abbr = '';
   let ok = 0;
+  const missing = [];
   for (const ch of [...text]) {
     if (CJK.test(ch)) {
       const py = map[ch];
       if (py) { full += py; abbr += py[0]; ok++; }
-      else { full += ch; abbr += ch; }
+      else { full += ch; abbr += ch; missing.push(ch); }
     } else if (/[a-z0-9]/i.test(ch)) {
       full += ch.toLowerCase();
       abbr += ch.toLowerCase();
     }
   }
-  return { full, abbr, coverage: charsOf(text).length ? ok / charsOf(text).length : 1 };
+  return { full, abbr, coverage: charsOf(text).length ? ok / charsOf(text).length : 1, missing };
 }
 
 let weak = 0;
+const missingChars = new Set();
 const allChars = [];
 for (const f of db.formulas) {
   const a = toPinyin(f.name || '');
@@ -77,6 +79,8 @@ for (const f of db.formulas) {
   f.abbr = a.abbr;
   f.doctor_pinyin = b.full;
   if (a.coverage < 1) weak++;
+  a.missing.forEach(c => missingChars.add(c));
+  b.missing.forEach(c => missingChars.add(c));
   allChars.push(f.name || '', f.doctor || '');
 }
 for (const t of Object.keys(db.herb_alias || {})) allChars.push(t);
@@ -92,6 +96,17 @@ if (mapDirty) {
 }
 
 /* ---------- 输出 ---------- */
+/* stats.count / herb_rows 是手写的元数据，加方后极易漏改，test-search 会因此失败。
+   构建时按实际回填这两项；其余字段（doctors / tag_rows / vocab）口径不同，保持原样。 */
+if (db.stats) {
+  const prevCount = db.stats.count;
+  db.stats.count = db.formulas.length;
+  db.stats.herb_rows = db.formulas.reduce((s, f) => s + ((f.herbs || []).length), 0);
+  if (prevCount && prevCount !== db.formulas.length) {
+    console.log(`方数 ${prevCount} → ${db.formulas.length}，记得把 data/formulas.json 的 version（当前 ${db.version}）加 1`);
+  }
+}
+
 db.generated_at = new Date().toISOString().slice(0, 10);
 db.built_with = { pinyin: pinyinFn ? 'pinyin(npm)' : 'pinyin-map.json', formulas: db.formulas.length };
 
@@ -137,4 +152,7 @@ fs.writeFileSync(versionFile, JSON.stringify(version, null, 2) + '\n', 'utf8');
 const kb = n => (n / 1024).toFixed(1) + ' KB';
 console.log(`db.js  ${kb(Buffer.byteLength(jsBody))}   ${db.formulas.length} 副 / ${db.formulas.reduce((s, f) => s + f.herbs.length, 0)} 条药味`);
 console.log(`拼音来源 ${db.built_with.pinyin}，字典 ${Object.keys(map).length} 字，缺字方名 ${weak} 副`);
+if (missingChars.size) {
+  console.log(`缺拼音的字：${[...missingChars].join(' ')}（补进 tools/pinyin-map.json 即可，格式 {"字":"pinyin"}）`);
+}
 console.log(`version.json → latest ${version.latest}`);

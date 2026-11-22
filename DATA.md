@@ -44,3 +44,5 @@ App 里能查到的全部内容都在这里：2086 首方、18575 条药味。�
 node tools/build-data.mjs      # formulas.json → app/www/js/db.js（含拼音与索引）
 node tools/build-offline.mjs   # → dist/ 离线包与 app/www-offline/
 ```
+
+想自己加方子（改 JSON，或用 CSV 批量导入），步骤与几个容易绊人的地方见 [录入方剂.md](录入方剂.md)。
