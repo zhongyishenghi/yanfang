@@ -3,7 +3,7 @@
  "version": 17,
  "updated_at": "2026-11-22",
  "edition": "public",
- "title": "拾方",
+ "title": "易圣验方",
  "subtitle": "方剂资料检索",
  "note": "公开版数据结构。只保留事实性字段；原书〔方解〕〔按语〕〔加减〕〔典型病例〕整段原文与扫描页均不入库。review=verified 表示已逐条对原页核对，draft 表示转录待核。",
  "fields_policy": {
@@ -193165,7 +193165,7 @@
   "1-247.pdf（书页 1-247）",
   "248-476.pdf（书页 248-476）"
  ],
- "generated_at": "2026-11-22",
+ "generated_at": "2026-11-23",
  "built_with": {
   "pinyin": "pinyin-map.json",
   "formulas": 2086

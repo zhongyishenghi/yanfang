@@ -33,7 +33,7 @@ if (!EDGE) {
   process.exit(0);
 }
 
-const tmp = path.join(os.tmpdir(), 'shifang-offline-test');
+const tmp = path.join(os.tmpdir(), 'yanfang-offline-test');
 
 /* Edge 无头进程退出比 execFileSync 返回稍晚，profile 的 lockfile 常被占住几百毫秒，
    直接 rmSync 会 EBUSY 把测试结果一起吞掉——重试几次再放弃。 */
@@ -209,7 +209,7 @@ check('翻方按钮成对且第一条禁用上一副', /NAV=2\b/.test(flip) && /
 
 /* 4. 旧本地副本不覆盖新种子 */
 const stale = page(
-  `<script>try{localStorage.setItem('shifang.db.v1', JSON.stringify({version:5,formulas:[],herb_alias:{},parts:[],chapters:[],stats:{}}));}catch(e){}</script>`,
+  `<script>try{localStorage.setItem('yanfang.db.v1', JSON.stringify({version:5,formulas:[],herb_alias:{},parts:[],chapters:[],stats:{}}));}catch(e){}</script>`,
   `'NET=' + window.__net + ' CARDS=' + document.querySelectorAll('.card').length`,
   3200
 );

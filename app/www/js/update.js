@@ -7,8 +7,8 @@
 (function (global) {
   'use strict';
 
-  var STORAGE_KEY = 'shifang.db.v1';
-  var BACKUP_KEY = 'shifang.db.backup';
+  var STORAGE_KEY = 'yanfang.db.v1';
+  var BACKUP_KEY = 'yanfang.db.backup';
 
   function fnv1a(str) {
     var h = 0x811c9dc5;

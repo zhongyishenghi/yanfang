@@ -32,7 +32,7 @@ if (!EDGE) {
   process.exit(0);
 }
 
-const tmp = path.join(os.tmpdir(), 'shifang-back-test');
+const tmp = path.join(os.tmpdir(), 'yanfang-back-test');
 fs.rmSync(tmp, { recursive: true, force: true });
 fs.mkdirSync(tmp, { recursive: true });
 

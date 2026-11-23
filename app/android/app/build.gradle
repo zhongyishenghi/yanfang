@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-/* 发布签名：参数在 android/keystore.properties，密钥在同目录 shifang-release.jks。
+/* 发布签名：参数在 android/keystore.properties，密钥在同目录 yanfang-release.jks。
    两个文件丢了就再也无法发布同名应用的更新，务必备份。 */
 def signPropsFile = rootProject.file('keystore.properties')
 def hasSigning = signPropsFile.exists()
@@ -14,8 +14,8 @@ android {
         applicationId "vip.zhongyisheng.yanfang"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.0.7"
+            versionCode 9
+            versionName "1.0.8"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

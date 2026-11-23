@@ -51,7 +51,32 @@
     return n;
   }
   var HERB_COUNT = countHerbs(db);
-  var FAV_KEY = 'shifang.favs';
+  var FAV_KEY = 'yanfang.favs';
+
+  /* 早期版本用别的前缀把这些东西存在本机。改名后按后缀把旧键并到新键、再删旧键，
+     否则升级上来的人收藏会凭空消失。这里只认后缀、不写死旧前缀，旧名不再出现在代码里。 */
+  (function adoptOldKeys() {
+    var pairs = { '.favs': FAV_KEY, '.flip.hint': 'yanfang.flip.hint', '.db.v1': 'yanfang.db.v1', '.db.backup': 'yanfang.db.backup' };
+    var olds = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i) || '';
+        for (var s in pairs) {
+          if (Object.prototype.hasOwnProperty.call(pairs, s) && k !== pairs[s] && k.slice(-s.length) === s) {
+            olds.push([k, pairs[s]]);
+            break;
+          }
+        }
+      }
+      olds.forEach(function (p) {
+        var v = localStorage.getItem(p[0]);
+        if (v !== null) {
+          if (localStorage.getItem(p[1]) === null) localStorage.setItem(p[1], v);
+          localStorage.removeItem(p[0]);
+        }
+      });
+    } catch (e) { /* 隐私模式等禁用存储时忽略 */ }
+  })();
 
   /* 页边裁掉、转录只留一个方框的味：不是药名，索引与列表都不拿它当药 */
   var PLACEHOLDER_HERB = /^[□?？·\-—\s]+$/;
@@ -684,8 +709,8 @@
   function flipHintOnce() {
     if (state.seq.length < 2) return;
     try {
-      if (localStorage.getItem('shifang.flip.hint')) return;
-      localStorage.setItem('shifang.flip.hint', '1');
+      if (localStorage.getItem('yanfang.flip.hint')) return;
+      localStorage.setItem('yanfang.flip.hint', '1');
     } catch (e) { return; }
     setTimeout(function () { say('左右滑动可翻上一副 / 下一副', 2200); }, 500);
   }
