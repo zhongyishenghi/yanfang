@@ -22,11 +22,11 @@
 
 ## 怎么用
 
-**安卓手机、平板**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.8.apk`，点开安装。系统提示「禁止安装未知来源应用」时允许这一次即可，装好后桌面出现「易圣验方」，不用联网。
+**安卓手机、平板**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.apk`，点开安装。系统提示「禁止安装未知来源应用」时允许这一次即可，装好后桌面出现「易圣验方」，不用联网。
 
-> 装过 1.0.7 及更早版本的，要先卸载再装这一版——v1.0.8 换了签名证书，系统不允许覆盖安装。之后的版本可以正常覆盖。
+> 这是第一个正式版。装过 11 月测试包（1.0.x 那几版）的，要先卸载再装——签名不同，系统不允许覆盖安装。往后的版本都能正常覆盖。
 
-**电脑（Windows / macOS / Linux）**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0.8-web.zip`，解压后第一层就是 `index.html`，双击用浏览器打开。不用安装，也不用在子目录里翻。
+**电脑（Windows / macOS / Linux）**：到 [Releases](../../releases/latest) 下载 `yanfang-v1.0-web.zip`，解压后第一层就是 `index.html`，双击用浏览器打开。不用安装，也不用在子目录里翻。
 
 > Release 页面上的 `Source code (zip/tar.gz)` 是给开发者的源代码，解压出来是整套工程，别下那个。
 
