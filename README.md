@@ -11,6 +11,8 @@
 
 不用注册，不用联网，不记录你搜过什么。数据全在本地，飞行模式照样用。
 
+> 代码与发行版同时放在 [GitHub](https://github.com/zhongyishenghi/yanfang) 和 [Gitee](https://gitee.com/zhongyishenghi/yanfang)，两边内容一致、以 GitHub 为准。国内网络从 Gitee 下载更快，两个仓库里的安装包是同一个文件，哈希相同。
+
 ## 数据是什么
 
 - **805 首验秘方** — 逐页转录自《首批国家级名老中医效验秘方精选》正编、续集等文献
